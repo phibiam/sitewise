@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native'
 
-const SERVER = 'http://192.168.1.80:3000'
+const SERVER = 'https://sitewise-server.onrender.com/'
 
 type Report = {
   location: string
