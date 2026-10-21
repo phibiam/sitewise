@@ -8,6 +8,98 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
+const SURREAL_URL = process.env.SURREALDB_AGENT_MEMORY_URL
+const SURREAL_KEY = process.env.SURREALDB_AGENT_MEMORY_KEY
+const CONTEXT_ID = '06gld827s1vm56srmcp8caclu4'
+
+async function saveToSurreal(report, transcript, siteId) {
+  try {
+    const text = `Safety report at site ${siteId}. Location: ${report.location}. Hazard type: ${report.hazardType}. Equipment: ${report.equipment}. Lockout status: ${report.lockoutStatus}. Injuries: ${report.injuries}. Corrective action: ${report.correctiveAction}. Severity: ${report.severity}. Missing fields: ${(report.missingFields || []).join(', ')}. Original transcript: ${transcript}`
+
+    const response = await fetch(
+      `${SURREAL_URL}/api/v1/${CONTEXT_ID}/facts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SURREAL_KEY}`,
+        },
+        body: JSON.stringify({
+          text,
+          infer: 'full',
+        }),
+      }
+    )
+
+    const responseText = await response.text()
+    console.log('SurrealDB status:', response.status)
+    console.log('SurrealDB response:', responseText.substring(0, 200))
+
+    if (!response.ok) {
+      console.error('SurrealDB save failed:', responseText)
+      return null
+    }
+
+    console.log('Saved to SurrealDB successfully')
+    return JSON.parse(responseText)
+  } catch (e) {
+    console.error('SurrealDB error:', e.message)
+    return null
+  }
+}
+
+async function getSitePatterns(siteId) {
+  try {
+    const response = await fetch(
+      `${SURREAL_URL}/api/v1/${CONTEXT_ID}/query`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SURREAL_KEY}`,
+        },
+        body: JSON.stringify({
+          query: `What fields are most commonly missing from safety reports at site ${siteId}?`,
+          k: 20,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      console.log('Pattern query failed:', response.status)
+      return []
+    }
+
+    const data = await response.json()
+    console.log('Pattern query:', JSON.stringify(data).substring(0, 300))
+
+    const facts = data.facts || data.hits || data.results || []
+    const missingCounts = {}
+
+    facts.forEach(fact => {
+      const content = fact.content || fact.text || ''
+      const match = content.match(/Missing fields: ([^.]+)/)
+      if (match) {
+        match[1].split(',').map(f => f.trim()).forEach(field => {
+          if (field && field !== 'none') {
+            missingCounts[field] = (missingCounts[field] || 0) + 1
+          }
+        })
+      }
+    })
+
+    const patterns = Object.entries(missingCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([field, count]) => ({ field, count, total: facts.length }))
+
+    console.log('Site patterns:', patterns)
+    return patterns
+  } catch (e) {
+    console.error('Pattern error:', e.message)
+    return []
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -24,8 +116,14 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk })
     req.on('end', async () => {
       try {
-        const { transcript } = JSON.parse(body)
+        const { transcript, siteId = 'pump-station-3' } = JSON.parse(body)
         console.log('Processing transcript:', transcript.substring(0, 50) + '...')
+
+        const sitePatterns = await getSitePatterns(siteId)
+
+        const patternContext = sitePatterns.length > 0
+          ? `\n\nThis site commonly misses these fields (prioritize asking about them): ${sitePatterns.map(p => `${p.field} (missed ${p.count}/${p.total} times)`).join(', ')}`
+          : ''
 
         const message = await anthropic.messages.create({
           model: 'claude-sonnet-4-6',
@@ -43,6 +141,7 @@ const server = http.createServer(async (req, res) => {
   "severity": "low / medium / high",
   "missingFields": ["list any fields the worker did not mention"]
 }
+${patternContext}
 
 Transcript: "${transcript}"`
           }]
@@ -52,8 +151,11 @@ Transcript: "${transcript}"`
         const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
         const report = JSON.parse(cleaned)
         console.log('Report extracted successfully')
+
+        await saveToSurreal(report, transcript, siteId)
+
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ report }))
+        res.end(JSON.stringify({ report, sitePatterns }))
       } catch (e) {
         console.error('Error:', e.message)
         res.writeHead(500, { 'Content-Type': 'application/json' })
@@ -70,4 +172,6 @@ Transcript: "${transcript}"`
 server.listen(3000, '0.0.0.0', () => {
   console.log('Sitewise server running on port 3000')
   console.log('Anthropic key loaded:', !!process.env.ANTHROPIC_API_KEY)
+  console.log('SurrealDB URL loaded:', !!process.env.SURREALDB_AGENT_MEMORY_URL)
+  console.log('SurrealDB Key loaded:', !!process.env.SURREALDB_AGENT_MEMORY_KEY)
 })
