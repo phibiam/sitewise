@@ -88,9 +88,18 @@ async function getSitePatterns(siteId) {
       }
     })
 
-    const patterns = Object.entries(missingCounts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([field, count]) => ({ field, count, total: facts.length }))
+   // Clean field names — strip any parenthetical priority text that got stored
+const cleanField = (f) => f.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase()
+
+const cleanedCounts = {}
+Object.entries(missingCounts).forEach(([field, count]) => {
+  const clean = cleanField(field)
+  cleanedCounts[clean] = (cleanedCounts[clean] || 0) + count
+})
+
+const patterns = Object.entries(cleanedCounts)
+  .sort((a, b) => b[1] - a[1])
+  .map(([field, count]) => ({ field, count, total: facts.length }))
 
     console.log('Site patterns:', patterns)
     return patterns
@@ -158,6 +167,50 @@ Transcript: "${transcript}"`
         res.end(JSON.stringify({ report, sitePatterns }))
       } catch (e) {
         console.error('Error:', e.message)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: e.message }))
+      }
+    })
+    return
+  }
+
+    if (req.method === 'POST' && req.url === '/api/file') {
+    let body = ''
+    req.on('data', chunk => { body += chunk })
+    req.on('end', async () => {
+      try {
+        const { report, gapAnswers, transcript, siteId } = JSON.parse(body)
+
+        const gapText = Object.entries(gapAnswers)
+          .map(([field, answer]) => `${field}: ${answer}`)
+          .join('. ')
+
+        const finalText = `FILED safety report at site ${siteId}. Location: ${report.location}. Hazard type: ${report.hazardType}. Equipment: ${report.equipment}. Lockout status: ${report.lockoutStatus}. Injuries: ${report.injuries}. Corrective action: ${report.correctiveAction}. Severity: ${report.severity}. Worker-provided gap answers: ${gapText || 'none'}. Original transcript: ${transcript}. Synthetic: false.`
+
+        const response = await fetch(
+          `${SURREAL_URL}/api/v1/${CONTEXT_ID}/facts`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SURREAL_KEY}`,
+            },
+            body: JSON.stringify({ text: finalText, infer: 'full' }),
+          }
+        )
+
+        if (!response.ok) {
+          const text = await response.text()
+          res.writeHead(500, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: text }))
+          return
+        }
+
+        console.log('Report filed successfully')
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: true }))
+      } catch (e) {
+        console.error('File error:', e.message)
         res.writeHead(500, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: e.message }))
       }
