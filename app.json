@@ -8,7 +8,8 @@
     "scheme": "sitewise",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.phibiam.sitewise"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +19,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.phibiam.sitewise"
+      "package": "com.phibiam.sitewise",
+      "minSdkVersion": 24,
+      "targetSdkVersion": 35
     },
     "web": {
       "output": "static",
