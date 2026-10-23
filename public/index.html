@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sitewise — Safety Reporting That Remembers</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f172a; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+    .app { max-width: 480px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+    .site-label { color: #64748b; text-align: center; font-size: 14px; margin-bottom: 24px; }
+    .card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+    textarea { width: 100%; background: #0f172a; border: none; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 15px; line-height: 1.5; resize: vertical; min-height: 120px; outline: none; font-family: inherit; }
+    .link { color: #3b82f6; font-size: 14px; cursor: pointer; border: none; background: none; padding: 8px 0 0; display: block; }
+    .btn-primary { width: 100%; background: #2563eb; color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-green { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
+    .btn-secondary { width: 100%; background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; padding: 14px; font-size: 15px; cursor: pointer; margin-bottom: 16px; }
+    .field { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #334155; flex-wrap: wrap; }
+    .field-label { color: #64748b; font-weight: 600; min-width: 140px; text-transform: capitalize; font-size: 14px; }
+    .field-value { color: #e2e8f0; flex: 1; font-size: 14px; }
+    .memory-banner { background: #1e3a5f; border-radius: 12px; padding: 14px; border-left: 3px solid #3b82f6; margin-bottom: 16px; }
+    .memory-text { color: #93c5fd; font-size: 14px; line-height: 1.5; }
+    .memory-highlight { font-weight: 700; color: #60a5fa; }
+    .gap-question { padding: 10px 0; border-bottom: 1px solid #334155; }
+    .gap-label { color: #fbbf24; font-weight: 600; font-size: 14px; text-transform: capitalize; margin-bottom: 6px; }
+    .gap-input { width: 100%; background: #0f172a; border: none; border-radius: 8px; padding: 10px; color: #f1f5f9; font-size: 14px; outline: none; font-family: inherit; }
+    .provenance { background: #0f2b1f; border-radius: 12px; padding: 14px; border-left: 3px solid #22c55e; margin-bottom: 16px; }
+    .provenance-title { color: #86efac; font-weight: 700; margin-bottom: 8px; }
+    .provenance-item { color: #4ade80; font-size: 13px; margin-bottom: 4px; }
+    .missing { background: #7c2d12; border-radius: 8px; padding: 12px; margin-top: 8px; }
+    .missing-title { color: #fca5a5; font-weight: 700; margin-bottom: 4px; }
+    .missing-item { color: #fca5a5; font-size: 14px; }
+    .error { color: #f87171; text-align: center; margin-bottom: 16px; }
+    .done-icon { font-size: 64px; text-align: center; margin-bottom: 16px; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    .subtitle { color: #94a3b8; text-align: center; font-size: 15px; line-height: 1.5; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Sitewise</h1>
+
+    <!-- SCREEN 1: Capture -->
+    <div id="screen-capture">
+      <div class="site-label">📍 Pump Station 3</div>
+      <div class="card">
+        <div class="card-title">Describe the hazard or incident</div>
+        <textarea id="transcript" placeholder="Type what happened..."></textarea>
+        <button class="link" onclick="useSample()">Use sample report</button>
+      </div>
+      <button class="btn-primary" id="extract-btn" onclick="extractReport()">Extract Report →</button>
+      <div id="capture-error" class="error hidden"></div>
+    </div>
+
+    <!-- SCREEN 2: Gap questions -->
+    <div id="screen-gaps" class="hidden">
+      <div class="site-label">📍 Pump Station 3</div>
+      <div id="memory-banner" class="memory-banner hidden"></div>
+      <div class="card">
+        <div class="card-title">Extracted fields</div>
+        <div id="extracted-fields"></div>
+      </div>
+      <div id="gap-questions-card" class="card hidden">
+        <div class="card-title" id="gap-count-title"></div>
+        <div id="gap-questions"></div>
+      </div>
+      <button class="btn-primary" onclick="goToSignoff()">Review & Sign Off →</button>
+      <button class="btn-secondary" onclick="showScreen('capture')">← Back</button>
+    </div>
+
+    <!-- SCREEN 3: Sign-off -->
+    <div id="screen-signoff" class="hidden">
+      <div class="site-label">📍 Pump Station 3</div>
+      <div class="card">
+        <div class="card-title">Report summary</div>
+        <div id="signoff-fields"></div>
+      </div>
+      <div id="signoff-answers-card" class="card hidden">
+        <div class="card-title">Your answers</div>
+        <div id="signoff-answers"></div>
+      </div>
+      <div class="provenance">
+        <div class="provenance-title">Provenance</div>
+        <div class="provenance-item">📝 location — worker-stated</div>
+        <div class="provenance-item">🤖 hazardType, equipment, severity — AI-inferred</div>
+        <div class="provenance-item">✍️ gap answers — worker-stated</div>
+      </div>
+      <button class="btn-green" id="file-btn" onclick="fileReport()">✓ File Report</button>
+      <button class="btn-secondary" onclick="showScreen('gaps')">← Back</button>
+      <div id="signoff-error" class="error hidden"></div>
+    </div>
+
+    <!-- SCREEN 4: Done -->
+    <div id="screen-done" class="hidden">
+      <div class="done-icon">✓</div>
+      <h1>Report Filed</h1>
+      <p class="subtitle">Saved to Sitewise memory.<br>This site now has one more record.</p>
+      <button class="btn-primary" onclick="resetApp()">New Report</button>
+    </div>
+  </div>
+
+  <script>
+    const SERVER = 'https://sitewise-server.onrender.com'
+    let currentReport = null
+    let currentPatterns = []
+    let gapAnswers = {}
+
+    function showScreen(name) {
+      ['capture', 'gaps', 'signoff', 'done'].forEach(s => {
+        document.getElementById('screen-' + s).classList.add('hidden')
+      })
+      document.getElementById('screen-' + name).classList.remove('hidden')
+    }
+
+    function useSample() {
+      document.getElementById('transcript').value =
+        'Worker observed hydraulic fluid leak near pump station 3. Equipment not locked out. Spill approximately 2 litres on concrete floor. Placed absorbent pads and reported to supervisor.'
+    }
+
+    async function extractReport() {
+      const transcript = document.getElementById('transcript').value.trim()
+      if (!transcript) return
+
+      const btn = document.getElementById('extract-btn')
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>'
+      document.getElementById('capture-error').classList.add('hidden')
+
+      try {
+        const res = await fetch(SERVER + '/api/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript, siteId: 'pump-station-3' }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+
+        currentReport = data.report
+        currentPatterns = data.sitePatterns || []
+        gapAnswers = {}
+        renderGapScreen()
+        showScreen('gaps')
+      } catch (e) {
+        const err = document.getElementById('capture-error')
+        err.textContent = e.message
+        err.classList.remove('hidden')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = 'Extract Report →'
+      }
+    }
+
+    function renderGapScreen() {
+      // Memory banner
+      const banner = document.getElementById('memory-banner')
+      if (currentPatterns.length > 0) {
+        const top = currentPatterns[0]
+        banner.innerHTML = `🧠 Sitewise is asking about <span class="memory-highlight">${top.field}</span> first — missed ${top.count}/${top.total} times at this site.`
+        banner.classList.remove('hidden')
+      } else {
+        banner.classList.add('hidden')
+      }
+
+      // Extracted fields
+      const fieldsEl = document.getElementById('extracted-fields')
+      fieldsEl.innerHTML = ''
+      Object.entries(currentReport).forEach(([key, value]) => {
+        if (key === 'missingFields') return
+        const div = document.createElement('div')
+        div.className = 'field'
+        div.innerHTML = `<span class="field-label">${key}</span><span class="field-value">${value}</span>`
+        fieldsEl.appendChild(div)
+      })
+
+      // Gap questions — ordered by site pattern frequency
+      const missing = currentReport.missingFields || []
+      const patternFields = currentPatterns.map(p => p.field)
+      const ordered = [
+        ...patternFields.filter(f => missing.includes(f)),
+        ...missing.filter(f => !patternFields.includes(f)),
+      ]
+
+      const questionsEl = document.getElementById('gap-questions')
+      questionsEl.innerHTML = ''
+      const card = document.getElementById('gap-questions-card')
+
+      if (ordered.length > 0) {
+        document.getElementById('gap-count-title').textContent =
+          `⚠ ${ordered.length} missing field${ordered.length > 1 ? 's' : ''}`
+        ordered.forEach(field => {
+          const pattern = currentPatterns.find(p => p.field === field)
+          const label = pattern
+            ? `${field} (missed ${pattern.count}/${pattern.total} times)`
+            : field
+          const div = document.createElement('div')
+          div.className = 'gap-question'
+          div.innerHTML = `
+            <div class="gap-label">${label}</div>
+            <input class="gap-input" type="text" placeholder="Enter ${field}..." data-field="${field}" />
+          `
+          questionsEl.appendChild(div)
+        })
+        card.classList.remove('hidden')
+      } else {
+        card.classList.add('hidden')
+      }
+    }
+
+    function goToSignoff() {
+      // Collect gap answers
+      gapAnswers = {}
+      document.querySelectorAll('.gap-input').forEach(input => {
+        if (input.value.trim()) {
+          gapAnswers[input.dataset.field] = input.value.trim()
+        }
+      })
+
+      // Render sign-off fields
+      const fieldsEl = document.getElementById('signoff-fields')
+      fieldsEl.innerHTML = ''
+      Object.entries(currentReport).forEach(([key, value]) => {
+        if (key === 'missingFields') return
+        const div = document.createElement('div')
+        div.className = 'field'
+        div.innerHTML = `<span class="field-label">${key}</span><span class="field-value">${value}</span>`
+        fieldsEl.appendChild(div)
+      })
+
+      // Render gap answers
+      const answersCard = document.getElementById('signoff-answers-card')
+      const answersEl = document.getElementById('signoff-answers')
+      answersEl.innerHTML = ''
+      if (Object.keys(gapAnswers).length > 0) {
+        Object.entries(gapAnswers).forEach(([field, answer]) => {
+          const div = document.createElement('div')
+          div.className = 'field'
+          div.innerHTML = `<span class="field-label">${field}</span><span class="field-value">${answer}</span>`
+          answersEl.appendChild(div)
+        })
+        answersCard.classList.remove('hidden')
+      } else {
+        answersCard.classList.add('hidden')
+      }
+
+      showScreen('signoff')
+    }
+
+    async function fileReport() {
+      const btn = document.getElementById('file-btn')
+      btn.disabled = true
+      btn.innerHTML = '<span class="spinner"></span>'
+      document.getElementById('signoff-error').classList.add('hidden')
+
+      try {
+        const res = await fetch(SERVER + '/api/file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            report: currentReport,
+            gapAnswers,
+            transcript: document.getElementById('transcript').value,
+            siteId: 'pump-station-3',
+          }),
+        })
+        const data = await res.json()
+        if (data.error) throw new Error(data.error)
+        showScreen('done')
+      } catch (e) {
+        const err = document.getElementById('signoff-error')
+        err.textContent = e.message
+        err.classList.remove('hidden')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = '✓ File Report'
+      }
+    }
+
+    function resetApp() {
+      currentReport = null
+      currentPatterns = []
+      gapAnswers = {}
+      document.getElementById('transcript').value = ''
+      showScreen('capture')
+    }
+  </script>
+</body>
+</html>
