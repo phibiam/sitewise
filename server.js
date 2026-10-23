@@ -1,8 +1,9 @@
 const path = require('path')
+const fs = require('fs')
+const http = require('http')
 require('dotenv').config({ path: path.join(__dirname, '.env') })
 
 const Anthropic = require('@anthropic-ai/sdk')
-const http = require('http')
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -24,22 +25,16 @@ async function saveToSurreal(report, transcript, siteId) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SURREAL_KEY}`,
         },
-        body: JSON.stringify({
-          text,
-          infer: 'full',
-        }),
+        body: JSON.stringify({ text, infer: 'full' }),
       }
     )
 
     const responseText = await response.text()
     console.log('SurrealDB status:', response.status)
-    console.log('SurrealDB response:', responseText.substring(0, 200))
-
     if (!response.ok) {
       console.error('SurrealDB save failed:', responseText)
       return null
     }
-
     console.log('Saved to SurrealDB successfully')
     return JSON.parse(responseText)
   } catch (e) {
@@ -71,8 +66,6 @@ async function getSitePatterns(siteId) {
     }
 
     const data = await response.json()
-    console.log('Pattern query:', JSON.stringify(data).substring(0, 300))
-
     const facts = data.facts || data.hits || data.results || []
     const missingCounts = {}
 
@@ -88,18 +81,16 @@ async function getSitePatterns(siteId) {
       }
     })
 
-   // Clean field names — strip any parenthetical priority text that got stored
-const cleanField = (f) => f.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase()
+    const cleanField = (f) => f.replace(/\s*\(.*?\)\s*/g, '').trim().toLowerCase()
+    const cleanedCounts = {}
+    Object.entries(missingCounts).forEach(([field, count]) => {
+      const clean = cleanField(field)
+      cleanedCounts[clean] = (cleanedCounts[clean] || 0) + count
+    })
 
-const cleanedCounts = {}
-Object.entries(missingCounts).forEach(([field, count]) => {
-  const clean = cleanField(field)
-  cleanedCounts[clean] = (cleanedCounts[clean] || 0) + count
-})
-
-const patterns = Object.entries(cleanedCounts)
-  .sort((a, b) => b[1] - a[1])
-  .map(([field, count]) => ({ field, count, total: facts.length }))
+    const patterns = Object.entries(cleanedCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([field, count]) => ({ field, count, total: facts.length }))
 
     console.log('Site patterns:', patterns)
     return patterns
@@ -111,12 +102,26 @@ const patterns = Object.entries(cleanedCounts)
 
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200)
     res.end()
+    return
+  }
+
+  if (req.method === 'GET') {
+    try {
+      const filePath = path.join(__dirname, 'public', 'index.html')
+      const content = fs.readFileSync(filePath, 'utf8')
+      res.writeHead(200, { 'Content-Type': 'text/html' })
+      res.end(content)
+    } catch (e) {
+      console.error('Failed to serve index.html:', e.message)
+      res.writeHead(500)
+      res.end('Server error: ' + e.message)
+    }
     return
   }
 
@@ -174,7 +179,7 @@ Transcript: "${transcript}"`
     return
   }
 
-    if (req.method === 'POST' && req.url === '/api/file') {
+  if (req.method === 'POST' && req.url === '/api/file') {
     let body = ''
     req.on('data', chunk => { body += chunk })
     req.on('end', async () => {
