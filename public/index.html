@@ -39,6 +39,9 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none; }
     .subtitle { color: #94a3b8; text-align: center; font-size: 15px; line-height: 1.5; margin-bottom: 16px; }
+    .btn-mic { width: 100%; background: #7c3aed; color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 12px; transition: background 0.2s; }
+    .btn-mic.listening { background: #dc2626; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
   </style>
 </head>
 <body>
@@ -53,6 +56,8 @@
         <textarea id="transcript" placeholder="Type what happened..."></textarea>
         <button class="link" onclick="useSample()">Use sample report</button>
       </div>
+
+      <button id="mic-btn" class="btn-mic" onclick="toggleVoice()">🎙 Hold to Speak</button>
       <button class="btn-primary" id="extract-btn" onclick="extractReport()">Extract Report →</button>
       <div id="capture-error" class="error hidden"></div>
     </div>
@@ -106,6 +111,74 @@
 
   <script>
     const SERVER = 'https://sitewise-server.onrender.com'
+    let recognition = null
+let isListening = false
+
+function initVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+  if (!SpeechRecognition) {
+    document.getElementById('mic-btn').style.display = 'none'
+    return
+  }
+  recognition = new SpeechRecognition()
+  recognition.continuous = true
+  recognition.interimResults = true
+  recognition.lang = 'en-US'
+
+  recognition.onresult = (event) => {
+    let final = ''
+    let interim = ''
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        final += event.results[i][0].transcript
+      } else {
+        interim += event.results[i][0].transcript
+      }
+    }
+    const current = document.getElementById('transcript').value
+    if (final) {
+      document.getElementById('transcript').value = current + final + ' '
+    }
+  }
+
+  recognition.onerror = (e) => {
+    console.error('Speech error:', e.error)
+    stopListening()
+  }
+
+  recognition.onend = () => {
+    if (isListening) recognition.start()
+  }
+}
+
+function toggleVoice() {
+  if (!recognition) initVoice()
+  if (!recognition) return
+
+  if (isListening) {
+    stopListening()
+  } else {
+    startListening()
+  }
+}
+
+function startListening() {
+  isListening = true
+  recognition.start()
+  const btn = document.getElementById('mic-btn')
+  btn.textContent = '⏹ Stop Recording'
+  btn.classList.add('listening')
+}
+
+function stopListening() {
+  isListening = false
+  recognition.stop()
+  const btn = document.getElementById('mic-btn')
+  btn.textContent = '🎙 Hold to Speak'
+  btn.classList.remove('listening')
+}
+
+initVoice()
     let currentReport = null
     let currentPatterns = []
     let gapAnswers = {}
