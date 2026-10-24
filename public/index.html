@@ -318,7 +318,7 @@
         const countText = pattern ? `<span class="gap-count">missed ${pattern.count}/${pattern.total} times</span>` : ''
         div.innerHTML = `
           <div class="gap-label">${formatLabel(field)} ${countText}</div>
-          <input class="gap-input" type="text" placeholder="Enter ${field.toLowerCase()}..." data-field="${field}" />
+          <input class="gap-input" type="text" placeholder="Enter answer..." data-field="${field}" />
         `
         questionsEl.appendChild(div)
       })
