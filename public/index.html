@@ -7,359 +7,437 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0f172a; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
-    .app { max-width: 480px; margin: 0 auto; padding: 24px; }
-    h1 { font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 4px; }
-    .site-label { color: #64748b; text-align: center; font-size: 14px; margin-bottom: 24px; }
+    .app { max-width: 480px; margin: 0 auto; padding: 24px; padding-top: 48px; }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .site-pill { display: inline-flex; align-items: center; gap: 6px; background: #1e293b; border-radius: 20px; padding: 4px 12px; font-size: 13px; color: #94a3b8; margin-top: 8px; }
+
+    /* Step indicator */
+    .steps { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 24px; }
+    .step { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: #1e293b; color: #64748b; position: relative; }
+    .step.active { background: #2563eb; color: #fff; }
+    .step.done { background: #16a34a; color: #fff; }
+    .step-line { flex: 1; height: 2px; background: #1e293b; max-width: 40px; }
+    .step-line.done { background: #16a34a; }
+
+    /* Cards */
     .card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    .card-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
-    textarea { width: 100%; background: #0f172a; border: none; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 15px; line-height: 1.5; resize: vertical; min-height: 120px; outline: none; font-family: inherit; }
-    .link { color: #3b82f6; font-size: 14px; cursor: pointer; border: none; background: none; padding: 8px 0 0; display: block; }
-    .btn-primary { width: 100%; background: #2563eb; color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-green { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
-    .btn-secondary { width: 100%; background: transparent; color: #94a3b8; border: 1px solid #334155; border-radius: 12px; padding: 14px; font-size: 15px; cursor: pointer; margin-bottom: 16px; }
-    .field { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #334155; flex-wrap: wrap; }
-    .field-label { color: #64748b; font-weight: 600; min-width: 140px; text-transform: capitalize; font-size: 14px; }
-    .field-value { color: #e2e8f0; flex: 1; font-size: 14px; }
-    .memory-banner { background: #1e3a5f; border-radius: 12px; padding: 14px; border-left: 3px solid #3b82f6; margin-bottom: 16px; }
-    .memory-text { color: #93c5fd; font-size: 14px; line-height: 1.5; }
-    .memory-highlight { font-weight: 700; color: #60a5fa; }
-    .gap-question { padding: 10px 0; border-bottom: 1px solid #334155; }
-    .gap-label { color: #fbbf24; font-weight: 600; font-size: 14px; text-transform: capitalize; margin-bottom: 6px; }
-    .gap-input { width: 100%; background: #0f172a; border: none; border-radius: 8px; padding: 10px; color: #f1f5f9; font-size: 14px; outline: none; font-family: inherit; }
-    .provenance { background: #0f2b1f; border-radius: 12px; padding: 14px; border-left: 3px solid #22c55e; margin-bottom: 16px; }
-    .provenance-title { color: #86efac; font-weight: 700; margin-bottom: 8px; }
-    .provenance-item { color: #4ade80; font-size: 13px; margin-bottom: 4px; }
-    .missing { background: #7c2d12; border-radius: 8px; padding: 12px; margin-top: 8px; }
-    .missing-title { color: #fca5a5; font-weight: 700; margin-bottom: 4px; }
-    .missing-item { color: #fca5a5; font-size: 14px; }
-    .error { color: #f87171; text-align: center; margin-bottom: 16px; }
-    .done-icon { font-size: 64px; text-align: center; margin-bottom: 16px; }
-    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .hidden { display: none; }
-    .subtitle { color: #94a3b8; text-align: center; font-size: 15px; line-height: 1.5; margin-bottom: 16px; }
-    .btn-mic { width: 100%; background: #7c3aed; color: #fff; border: none; border-radius: 12px; padding: 18px; font-size: 17px; font-weight: 700; cursor: pointer; margin-bottom: 12px; transition: background 0.2s; }
+    .card-title { font-size: 14px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+    /* Fields */
+    .field { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #0f172a; align-items: flex-start; }
+    .field:last-child { border-bottom: none; }
+    .field-label { color: #64748b; font-size: 13px; min-width: 130px; padding-top: 2px; }
+    .field-value { color: #e2e8f0; font-size: 14px; flex: 1; font-weight: 500; }
+    .field-value.high { color: #f87171; }
+    .field-value.medium { color: #fbbf24; }
+    .field-value.low { color: #34d399; }
+
+    /* Severity badge */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    .badge.high { background: #7f1d1d; color: #f87171; }
+    .badge.medium { background: #78350f; color: #fbbf24; }
+    .badge.low { background: #064e3b; color: #34d399; }
+
+    /* Lockout warning */
+    .lockout-warning { background: #7f1d1d; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #fca5a5; font-weight: 600; margin-top: 4px; }
+
+    /* Textarea */
+    textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 15px; line-height: 1.5; resize: vertical; min-height: 120px; outline: none; font-family: inherit; transition: border-color 0.2s; }
+    textarea:focus { border-color: #3b82f6; }
+    .sample-link { color: #3b82f6; font-size: 13px; cursor: pointer; border: none; background: none; padding: 8px 0 0; display: block; }
+
+    /* Buttons */
+    .btn-mic { width: 100%; background: #7c3aed; color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: background 0.2s; }
     .btn-mic.listening { background: #dc2626; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    .btn-primary { width: 100%; background: #2563eb; color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: opacity 0.2s; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-green { width: 100%; background: #16a34a; color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+    .btn-secondary { width: 100%; background: transparent; color: #64748b; border: 1px solid #334155; border-radius: 12px; padding: 14px; font-size: 14px; cursor: pointer; margin-bottom: 10px; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
+
+    /* Memory banner */
+    .memory-banner { background: #172554; border-radius: 12px; padding: 14px 16px; border-left: 3px solid #3b82f6; margin-bottom: 16px; font-size: 14px; color: #93c5fd; line-height: 1.5; }
+    .memory-banner strong { color: #60a5fa; }
+
+    /* Gap questions */
+    .gap-item { padding: 12px 0; border-bottom: 1px solid #0f172a; }
+    .gap-item:last-child { border-bottom: none; }
+    .gap-label { font-size: 13px; font-weight: 600; color: #fbbf24; margin-bottom: 6px; }
+    .gap-count { font-weight: 400; color: #92400e; font-size: 12px; }
+    .gap-input { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; color: #f1f5f9; font-size: 14px; outline: none; font-family: inherit; transition: border-color 0.2s; }
+    .gap-input:focus { border-color: #fbbf24; }
+
+    /* Provenance */
+    .provenance { background: #052e16; border-radius: 12px; padding: 14px 16px; border-left: 3px solid #22c55e; margin-bottom: 16px; }
+    .provenance-title { font-size: 13px; font-weight: 700; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .provenance-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4ade80; margin-bottom: 6px; }
+    .provenance-row:last-child { margin-bottom: 0; }
+    .provenance-tag { background: #14532d; border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 700; color: #86efac; }
+
+    /* Done screen */
+    .done-screen { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px; }
+    .done-icon { width: 80px; height: 80px; background: #14532d; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+    .done-title { font-size: 26px; font-weight: 800; }
+    .done-sub { color: #64748b; font-size: 15px; line-height: 1.5; }
+
+    /* Error */
+    .error { color: #f87171; font-size: 14px; text-align: center; padding: 8px; }
+
+    /* Spinner */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <h1>Sitewise</h1>
+<div class="app">
 
-    <!-- SCREEN 1: Capture -->
-    <div id="screen-capture">
-      <div class="site-label">📍 Pump Station 3</div>
-      <div class="card">
-        <div class="card-title">Describe the hazard or incident</div>
-        <textarea id="transcript" placeholder="Type what happened..."></textarea>
-        <button class="link" onclick="useSample()">Use sample report</button>
-      </div>
-
-      <button id="mic-btn" class="btn-mic" onclick="toggleVoice()">🎙 Hold to Speak</button>
-      <button class="btn-primary" id="extract-btn" onclick="extractReport()">Extract Report →</button>
-      <div id="capture-error" class="error hidden"></div>
+  <!-- SCREEN 1: Capture -->
+  <div id="screen-capture">
+    <div class="header">
+      <h1>Sitewise</h1>
+      <div class="site-pill">📍 Pump Station 3</div>
     </div>
-
-    <!-- SCREEN 2: Gap questions -->
-    <div id="screen-gaps" class="hidden">
-      <div class="site-label">📍 Pump Station 3</div>
-      <div id="memory-banner" class="memory-banner hidden"></div>
-      <div class="card">
-        <div class="card-title">Extracted fields</div>
-        <div id="extracted-fields"></div>
-      </div>
-      <div id="gap-questions-card" class="card hidden">
-        <div class="card-title" id="gap-count-title"></div>
-        <div id="gap-questions"></div>
-      </div>
-      <button class="btn-primary" onclick="goToSignoff()">Review & Sign Off →</button>
-      <button class="btn-secondary" onclick="showScreen('capture')">← Back</button>
+    <div class="steps">
+      <div class="step active">1</div>
+      <div class="step-line"></div>
+      <div class="step">2</div>
+      <div class="step-line"></div>
+      <div class="step">3</div>
+      <div class="step-line"></div>
+      <div class="step">4</div>
     </div>
-
-    <!-- SCREEN 3: Sign-off -->
-    <div id="screen-signoff" class="hidden">
-      <div class="site-label">📍 Pump Station 3</div>
-      <div class="card">
-        <div class="card-title">Report summary</div>
-        <div id="signoff-fields"></div>
-      </div>
-      <div id="signoff-answers-card" class="card hidden">
-        <div class="card-title">Your answers</div>
-        <div id="signoff-answers"></div>
-      </div>
-      <div class="provenance">
-        <div class="provenance-title">Provenance</div>
-        <div class="provenance-item">📝 location — worker-stated</div>
-        <div class="provenance-item">🤖 hazardType, equipment, severity — AI-inferred</div>
-        <div class="provenance-item">✍️ gap answers — worker-stated</div>
-      </div>
-      <button class="btn-green" id="file-btn" onclick="fileReport()">✓ File Report</button>
-      <button class="btn-secondary" onclick="showScreen('gaps')">← Back</button>
-      <div id="signoff-error" class="error hidden"></div>
+    <div class="card">
+      <div class="card-title">Describe the hazard or incident</div>
+      <textarea id="transcript" placeholder="Speak or type what happened on site..."></textarea>
+      <button class="sample-link" onclick="useSample()">Use sample report</button>
     </div>
+    <button id="mic-btn" class="btn-mic" onclick="toggleVoice()">🎙 Tap to Speak</button>
+    <button class="btn-primary" id="extract-btn" onclick="extractReport()">Extract Report →</button>
+    <div id="capture-error" class="error hidden"></div>
+  </div>
 
-    <!-- SCREEN 4: Done -->
-    <div id="screen-done" class="hidden">
+  <!-- SCREEN 2: Gap questions -->
+  <div id="screen-gaps" class="hidden">
+    <div class="header">
+      <h1>Sitewise</h1>
+      <div class="site-pill">📍 Pump Station 3</div>
+    </div>
+    <div class="steps">
+      <div class="step done">✓</div>
+      <div class="step-line done"></div>
+      <div class="step active">2</div>
+      <div class="step-line"></div>
+      <div class="step">3</div>
+      <div class="step-line"></div>
+      <div class="step">4</div>
+    </div>
+    <div id="memory-banner" class="memory-banner hidden"></div>
+    <div class="card">
+      <div class="card-title">Extracted fields</div>
+      <div id="extracted-fields"></div>
+    </div>
+    <div id="gap-questions-card" class="card hidden">
+      <div class="card-title" id="gap-count-title"></div>
+      <div id="gap-questions"></div>
+    </div>
+    <button class="btn-primary" onclick="goToSignoff()">Review & Sign Off →</button>
+    <button class="btn-secondary" onclick="showScreen('capture')">← Back</button>
+  </div>
+
+  <!-- SCREEN 3: Sign-off -->
+  <div id="screen-signoff" class="hidden">
+    <div class="header">
+      <h1>Sitewise</h1>
+      <div class="site-pill">📍 Pump Station 3</div>
+    </div>
+    <div class="steps">
+      <div class="step done">✓</div>
+      <div class="step-line done"></div>
+      <div class="step done">✓</div>
+      <div class="step-line done"></div>
+      <div class="step active">3</div>
+      <div class="step-line"></div>
+      <div class="step">4</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Report summary</div>
+      <div id="signoff-fields"></div>
+    </div>
+    <div id="signoff-answers-card" class="card hidden">
+      <div class="card-title">Your answers</div>
+      <div id="signoff-answers"></div>
+    </div>
+    <div class="provenance">
+      <div class="provenance-title">Provenance</div>
+      <div class="provenance-row">
+        <span class="provenance-tag">WORKER</span> location, gap answers
+      </div>
+      <div class="provenance-row">
+        <span class="provenance-tag">AI</span> hazardType, equipment, severity, lockoutStatus
+      </div>
+    </div>
+    <button class="btn-green" id="file-btn" onclick="fileReport()">✓ File Report</button>
+    <button class="btn-secondary" onclick="showScreen('gaps')">← Back</button>
+    <div id="signoff-error" class="error hidden"></div>
+  </div>
+
+  <!-- SCREEN 4: Done -->
+  <div id="screen-done" class="hidden">
+    <div class="done-screen">
       <div class="done-icon">✓</div>
-      <h1>Report Filed</h1>
-      <p class="subtitle">Saved to Sitewise memory.<br>This site now has one more record.</p>
-      <button class="btn-primary" onclick="resetApp()">New Report</button>
+      <div class="done-title">Report Filed</div>
+      <div class="done-sub">Saved to Sitewise memory.<br>This site now has one more record to learn from.</div>
+      <button class="btn-primary" onclick="resetApp()">+ New Report</button>
     </div>
   </div>
 
-  <script>
-    const SERVER = 'https://sitewise-server.onrender.com'
-    let recognition = null
-let isListening = false
+</div>
 
-function initVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-  if (!SpeechRecognition) {
-    document.getElementById('mic-btn').style.display = 'none'
-    return
+<script>
+  const SERVER = 'https://sitewise-server.onrender.com'
+  let currentReport = null
+  let currentPatterns = []
+  let gapAnswers = {}
+  let recognition = null
+  let isListening = false
+
+  function showScreen(name) {
+    ['capture','gaps','signoff','done'].forEach(s => {
+      document.getElementById('screen-' + s).classList.add('hidden')
+    })
+    document.getElementById('screen-' + name).classList.remove('hidden')
+    window.scrollTo(0, 0)
   }
-  recognition = new SpeechRecognition()
-  recognition.continuous = true
-  recognition.interimResults = true
-  recognition.lang = 'en-US'
 
-  recognition.onresult = (event) => {
-    let final = ''
-    let interim = ''
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      if (event.results[i].isFinal) {
-        final += event.results[i][0].transcript
+  function useSample() {
+    document.getElementById('transcript').value =
+      'Worker observed hydraulic fluid leak near pump station 3. Equipment not locked out. Spill approximately 2 litres on concrete floor. Placed absorbent pads and reported to supervisor.'
+  }
+
+  function formatLabel(key) {
+    return key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, s => s.toUpperCase())
+      .trim()
+  }
+
+  function severityBadge(value) {
+    const v = (value || '').toLowerCase()
+    if (['high','medium','low'].includes(v)) {
+      return `<span class="badge ${v}">${v}</span>`
+    }
+    return `<span class="field-value">${value}</span>`
+  }
+
+  function renderFields(containerId, report) {
+    const el = document.getElementById(containerId)
+    el.innerHTML = ''
+    Object.entries(report).forEach(([key, value]) => {
+      if (key === 'missingFields') return
+      const div = document.createElement('div')
+      div.className = 'field'
+      const label = formatLabel(key)
+      let valueHtml = ''
+      if (key === 'severity') {
+        valueHtml = severityBadge(value)
+      } else if (key === 'lockoutStatus' && String(value).toLowerCase().includes('not locked out')) {
+        valueHtml = `<span class="field-value high">⚠ ${value}</span>`
       } else {
-        interim += event.results[i][0].transcript
+        valueHtml = `<span class="field-value">${value}</span>`
       }
-    }
-    const current = document.getElementById('transcript').value
-    if (final) {
-      document.getElementById('transcript').value = current + final + ' '
-    }
+      div.innerHTML = `<span class="field-label">${label}</span>${valueHtml}`
+      el.appendChild(div)
+    })
   }
 
-  recognition.onerror = (e) => {
-    console.error('Speech error:', e.error)
-    stopListening()
-  }
-
-  recognition.onend = () => {
-    if (isListening) recognition.start()
-  }
-}
-
-function toggleVoice() {
-  if (!recognition) initVoice()
-  if (!recognition) return
-
-  if (isListening) {
-    stopListening()
-  } else {
-    startListening()
-  }
-}
-
-function startListening() {
-  isListening = true
-  recognition.start()
-  const btn = document.getElementById('mic-btn')
-  btn.textContent = '⏹ Stop Recording'
-  btn.classList.add('listening')
-}
-
-function stopListening() {
-  isListening = false
-  recognition.stop()
-  const btn = document.getElementById('mic-btn')
-  btn.textContent = '🎙 Hold to Speak'
-  btn.classList.remove('listening')
-}
-
-initVoice()
-    let currentReport = null
-    let currentPatterns = []
-    let gapAnswers = {}
-
-    function showScreen(name) {
-      ['capture', 'gaps', 'signoff', 'done'].forEach(s => {
-        document.getElementById('screen-' + s).classList.add('hidden')
+  async function extractReport() {
+    const transcript = document.getElementById('transcript').value.trim()
+    if (!transcript) return
+    const btn = document.getElementById('extract-btn')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span> Processing...'
+    document.getElementById('capture-error').classList.add('hidden')
+    try {
+      const res = await fetch(SERVER + '/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, siteId: 'pump-station-3' }),
       })
-      document.getElementById('screen-' + name).classList.remove('hidden')
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      currentReport = data.report
+      currentPatterns = data.sitePatterns || []
+      gapAnswers = {}
+      renderGapScreen()
+      showScreen('gaps')
+    } catch (e) {
+      const err = document.getElementById('capture-error')
+      err.textContent = 'Error: ' + e.message
+      err.classList.remove('hidden')
+    } finally {
+      btn.disabled = false
+      btn.innerHTML = 'Extract Report →'
+    }
+  }
+
+  function renderGapScreen() {
+    // Memory banner
+    const banner = document.getElementById('memory-banner')
+    if (currentPatterns.length > 0) {
+      const top = currentPatterns[0]
+      banner.innerHTML = `🧠 Sitewise is asking about <strong>${top.field}</strong> first — missed ${top.count}/${top.total} times at this site.`
+      banner.classList.remove('hidden')
+    } else {
+      banner.classList.add('hidden')
     }
 
-    function useSample() {
-      document.getElementById('transcript').value =
-        'Worker observed hydraulic fluid leak near pump station 3. Equipment not locked out. Spill approximately 2 litres on concrete floor. Placed absorbent pads and reported to supervisor.'
+    renderFields('extracted-fields', currentReport)
+
+    const missing = currentReport.missingFields || []
+    const patternFields = currentPatterns.map(p => p.field)
+    const ordered = [
+      ...patternFields.filter(f => missing.includes(f)),
+      ...missing.filter(f => !patternFields.includes(f)),
+    ]
+
+    const questionsEl = document.getElementById('gap-questions')
+    questionsEl.innerHTML = ''
+    const card = document.getElementById('gap-questions-card')
+
+    if (ordered.length > 0) {
+      document.getElementById('gap-count-title').textContent = `⚠ ${ordered.length} missing field${ordered.length > 1 ? 's' : ''}`
+      ordered.forEach(field => {
+        const pattern = currentPatterns.find(p => p.field === field)
+        const div = document.createElement('div')
+        div.className = 'gap-item'
+        const countText = pattern ? `<span class="gap-count">missed ${pattern.count}/${pattern.total} times</span>` : ''
+        div.innerHTML = `
+          <div class="gap-label">${formatLabel(field)} ${countText}</div>
+          <input class="gap-input" type="text" placeholder="Enter ${field.toLowerCase()}..." data-field="${field}" />
+        `
+        questionsEl.appendChild(div)
+      })
+      card.classList.remove('hidden')
+    } else {
+      card.classList.add('hidden')
     }
+  }
 
-    async function extractReport() {
-      const transcript = document.getElementById('transcript').value.trim()
-      if (!transcript) return
+  function goToSignoff() {
+    gapAnswers = {}
+    document.querySelectorAll('.gap-input').forEach(input => {
+      if (input.value.trim()) gapAnswers[input.dataset.field] = input.value.trim()
+    })
 
-      const btn = document.getElementById('extract-btn')
-      btn.disabled = true
-      btn.innerHTML = '<span class="spinner"></span>'
-      document.getElementById('capture-error').classList.add('hidden')
+    renderFields('signoff-fields', currentReport)
 
-      try {
-        const res = await fetch(SERVER + '/api/report', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transcript, siteId: 'pump-station-3' }),
-        })
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-
-        currentReport = data.report
-        currentPatterns = data.sitePatterns || []
-        gapAnswers = {}
-        renderGapScreen()
-        showScreen('gaps')
-      } catch (e) {
-        const err = document.getElementById('capture-error')
-        err.textContent = e.message
-        err.classList.remove('hidden')
-      } finally {
-        btn.disabled = false
-        btn.innerHTML = 'Extract Report →'
-      }
-    }
-
-    function renderGapScreen() {
-      // Memory banner
-      const banner = document.getElementById('memory-banner')
-      if (currentPatterns.length > 0) {
-        const top = currentPatterns[0]
-        banner.innerHTML = `🧠 Sitewise is asking about <span class="memory-highlight">${top.field}</span> first — missed ${top.count}/${top.total} times at this site.`
-        banner.classList.remove('hidden')
-      } else {
-        banner.classList.add('hidden')
-      }
-
-      // Extracted fields
-      const fieldsEl = document.getElementById('extracted-fields')
-      fieldsEl.innerHTML = ''
-      Object.entries(currentReport).forEach(([key, value]) => {
-        if (key === 'missingFields') return
+    const answersCard = document.getElementById('signoff-answers-card')
+    const answersEl = document.getElementById('signoff-answers')
+    answersEl.innerHTML = ''
+    if (Object.keys(gapAnswers).length > 0) {
+      Object.entries(gapAnswers).forEach(([field, answer]) => {
         const div = document.createElement('div')
         div.className = 'field'
-        div.innerHTML = `<span class="field-label">${key}</span><span class="field-value">${value}</span>`
-        fieldsEl.appendChild(div)
+        div.innerHTML = `<span class="field-label">${formatLabel(field)}</span><span class="field-value">${answer}</span>`
+        answersEl.appendChild(div)
       })
+      answersCard.classList.remove('hidden')
+    } else {
+      answersCard.classList.add('hidden')
+    }
 
-      // Gap questions — ordered by site pattern frequency
-      const missing = currentReport.missingFields || []
-      const patternFields = currentPatterns.map(p => p.field)
-      const ordered = [
-        ...patternFields.filter(f => missing.includes(f)),
-        ...missing.filter(f => !patternFields.includes(f)),
-      ]
+    showScreen('signoff')
+  }
 
-      const questionsEl = document.getElementById('gap-questions')
-      questionsEl.innerHTML = ''
-      const card = document.getElementById('gap-questions-card')
+  async function fileReport() {
+    const btn = document.getElementById('file-btn')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span> Filing...'
+    document.getElementById('signoff-error').classList.add('hidden')
+    try {
+      const res = await fetch(SERVER + '/api/file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          report: currentReport,
+          gapAnswers,
+          transcript: document.getElementById('transcript').value,
+          siteId: 'pump-station-3',
+        }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      showScreen('done')
+    } catch (e) {
+      const err = document.getElementById('signoff-error')
+      err.textContent = 'Error: ' + e.message
+      err.classList.remove('hidden')
+    } finally {
+      btn.disabled = false
+      btn.innerHTML = '✓ File Report'
+    }
+  }
 
-      if (ordered.length > 0) {
-        document.getElementById('gap-count-title').textContent =
-          `⚠ ${ordered.length} missing field${ordered.length > 1 ? 's' : ''}`
-        ordered.forEach(field => {
-          const pattern = currentPatterns.find(p => p.field === field)
-          const label = pattern
-            ? `${field} (missed ${pattern.count}/${pattern.total} times)`
-            : field
-          const div = document.createElement('div')
-          div.className = 'gap-question'
-          div.innerHTML = `
-            <div class="gap-label">${label}</div>
-            <input class="gap-input" type="text" placeholder="Enter ${field}..." data-field="${field}" />
-          `
-          questionsEl.appendChild(div)
-        })
-        card.classList.remove('hidden')
-      } else {
-        card.classList.add('hidden')
+  function resetApp() {
+    currentReport = null
+    currentPatterns = []
+    gapAnswers = {}
+    document.getElementById('transcript').value = ''
+    showScreen('capture')
+  }
+
+  // Voice
+  function initVoice() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { document.getElementById('mic-btn').style.display = 'none'; return }
+    recognition = new SR()
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.lang = 'en-US'
+    recognition.onresult = (event) => {
+      let final = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) final += event.results[i][0].transcript
+      }
+      if (final) {
+        document.getElementById('transcript').value += final + ' '
       }
     }
+    recognition.onerror = () => stopListening()
+    recognition.onend = () => { if (isListening) recognition.start() }
+  }
 
-    function goToSignoff() {
-      // Collect gap answers
-      gapAnswers = {}
-      document.querySelectorAll('.gap-input').forEach(input => {
-        if (input.value.trim()) {
-          gapAnswers[input.dataset.field] = input.value.trim()
-        }
-      })
+  function toggleVoice() {
+    if (!recognition) initVoice()
+    if (!recognition) return
+    isListening ? stopListening() : startListening()
+  }
 
-      // Render sign-off fields
-      const fieldsEl = document.getElementById('signoff-fields')
-      fieldsEl.innerHTML = ''
-      Object.entries(currentReport).forEach(([key, value]) => {
-        if (key === 'missingFields') return
-        const div = document.createElement('div')
-        div.className = 'field'
-        div.innerHTML = `<span class="field-label">${key}</span><span class="field-value">${value}</span>`
-        fieldsEl.appendChild(div)
-      })
+  function startListening() {
+    isListening = true
+    recognition.start()
+    const btn = document.getElementById('mic-btn')
+    btn.textContent = '⏹ Stop Recording'
+    btn.classList.add('listening')
+  }
 
-      // Render gap answers
-      const answersCard = document.getElementById('signoff-answers-card')
-      const answersEl = document.getElementById('signoff-answers')
-      answersEl.innerHTML = ''
-      if (Object.keys(gapAnswers).length > 0) {
-        Object.entries(gapAnswers).forEach(([field, answer]) => {
-          const div = document.createElement('div')
-          div.className = 'field'
-          div.innerHTML = `<span class="field-label">${field}</span><span class="field-value">${answer}</span>`
-          answersEl.appendChild(div)
-        })
-        answersCard.classList.remove('hidden')
-      } else {
-        answersCard.classList.add('hidden')
-      }
+  function stopListening() {
+    isListening = false
+    recognition.stop()
+    const btn = document.getElementById('mic-btn')
+    btn.textContent = '🎙 Tap to Speak'
+    btn.classList.remove('listening')
+  }
 
-      showScreen('signoff')
-    }
+  initVoice()
 
-    async function fileReport() {
-      const btn = document.getElementById('file-btn')
-      btn.disabled = true
-      btn.innerHTML = '<span class="spinner"></span>'
-      document.getElementById('signoff-error').classList.add('hidden')
-
-      try {
-        const res = await fetch(SERVER + '/api/file', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            report: currentReport,
-            gapAnswers,
-            transcript: document.getElementById('transcript').value,
-            siteId: 'pump-station-3',
-          }),
-        })
-        const data = await res.json()
-        if (data.error) throw new Error(data.error)
-        showScreen('done')
-      } catch (e) {
-        const err = document.getElementById('signoff-error')
-        err.textContent = e.message
-        err.classList.remove('hidden')
-      } finally {
-        btn.disabled = false
-        btn.innerHTML = '✓ File Report'
-      }
-    }
-
-    function resetApp() {
-      currentReport = null
-      currentPatterns = []
-      gapAnswers = {}
-      document.getElementById('transcript').value = ''
-      showScreen('capture')
-    }
-  </script>
+  // Wake server on load
+  fetch(SERVER + '/api/report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript: 'ping', siteId: 'ping' }) }).catch(() => {})
+</script>
 </body>
 </html>
